@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "chalk-pipe": "^5.1.1",
+    "fs": "0.0.1-security",
     "inquirer": "^8.1.2"
   }
 }

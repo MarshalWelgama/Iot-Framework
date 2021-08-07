@@ -6,6 +6,7 @@ var NodeType;
  */
 
 'use strict';
+const fs = require('fs');
 const inquirer = require('inquirer');
 const initialize = [
     {
@@ -37,9 +38,6 @@ const initialize = [
             return val.toLowerCase();
         }
     },
-]
-
-const IotQuestions = [
     {
         type: 'confirm',
         name: 'registryImage',
@@ -55,17 +53,17 @@ const IotQuestions = [
         message: "Image location:",
         when: (answers) => answers.registryImage === false,
     }
-]
 
+]
 
 inquirer.prompt(initialize).then((answers) => {
     RegisteryLocation = answers.registeryLocation
     Name = answers.name
     NodeType = answers.nodeType
-    console.log(JSON.stringify(answers, null, '  '));
-}).then(() => {
-    inquirer.prompt(IotQuestions).then((answers) => {
-        console.log(JSON.stringify(answers, null, '  '));
-    })
+    console.log(JSON.stringify(answers));
+    fs.writeFile("config.json", JSON.stringify(answers), function (err) {
+        if (err) {
+            console.log(err);
+        }
+    });
 });
-
