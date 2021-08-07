@@ -1,0 +1,16 @@
+{
+  "name": "source-files",
+  "version": "1.0.0",
+  "description": "To intialise nodes on our framework",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "chalk-pipe": "^5.1.1",
+    "inquirer": "^8.1.2"
+  }
+}
