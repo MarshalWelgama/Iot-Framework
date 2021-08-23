@@ -3,68 +3,102 @@ var Assigned = false;
 var MqttConnected = false;
 var mqtt = require('mqtt')
 var shell = require('./shellHelp.js')
+var client;
+var configuration;
 function AssignedStatus() {
     (Assigned) ? console.log('Working on task') : console.log('Waiting for task..')
 }
 
-function GetTask(imageLocation) {
-    client.subscribe(`Resource-Pool`, null, function () {
-        console.log('Connected to resource pool')
-        AssignedStatus()
-        //add logic for this edge server to be standy and wait for an application to be assigned to it
-    })
+function runRegistryImage(iN, rL) {
+    var commands = [
+        `docker pull ${rL}/${iN}`,
+        `docker run ${rL}/${iN}`,
+        'echo done'
+    ]
+    Assigned = true;
+    shell.exec_commands(commands)
+    console.log('Running task from registry, please wait...')
+
+    // run the image based on the name of it in the registry.
+}
+
+function GetTask(rL) { //command to get task, we will alweays stay connected to resource pool
     client.on('message', function (topic, message) {
-        // prints out message when received from subscribe
-        // on message, run docker node and stop subscribing. 
-        console.log(message.toString())
+        if (Assigned) {
+            console.log(Assigned)
+            console.log('working on task, cannot pickup new task')
+            console.log(message.toString())
+        } else {
+            console.log('Inside Gettask and assigned in false so we will run the image')
+            // on message, run docker node and stop subscribing. 
+            runRegistryImage(message.toString(), rL)
+            console.log(Assigned)
+            client.unsubscribe('Resource-Pool')
+            run(configuration)
+        }
         //once we identify a task, run it on this node and send a message to resource pool completed for iot node to stop
-    }) 
+    })
 }
 
 function SetupRegistry() {
     var commands = [
         "docker run -d -p 5000:5000 --restart=always --name registry registry:2",
-        "docker pull ubuntu:16.04",
-        "docker tag ubuntu:16.04 localhost:5000/my-ubuntu",
-        "docker push localhost:5000/my-ubuntu",
-        "docker image remove ubuntu:16.04",
-        "docker image remove localhost:5000/my-ubuntu",
-        "docker pull localhost:5000/my-ubuntu",
+        // "docker pull ubuntu:16.04",
+        // "docker tag ubuntu:16.04 localhost:5000/my-ubuntu",
+        // "docker push localhost:5000/my-ubuntu",
+        // "docker image remove ubuntu:16.04",
+        // "docker image remove localhost:5000/my-ubuntu",
+        // "docker pull localhost:5000/my-ubuntu",
         "echo done"
-      ]
+    ]
     // var commands = [
-    //     "ls",
-    //     "mkdir yee",
+    //     "echo hi",
     //     "echo done"
     // ]
-      shell.exec_commands(commands)
-      console.log('Your registry is being created in the background on port 5000, please give a few minutes...')
+    shell.exec_commands(commands)
+    console.log('Your registry is being created in the background on port 5000, please give a few minutes...')
 }
 
 function run(config) {
+    configuration = config;
+    var registryLocation;
 
     if (!config.registrySetup) {
         SetupRegistry()
-        
+        registryLocation = 'localhost:5000'
         //check if they want us to setup the registry on this server.   
     }
-    
-    //  if (config.mqttLocation) { //connect to mqqt broker if already setup
-    //      var client = mqtt.connect(`mqtt://${config.mqttLocation}`)
-    //      try {
-    //          client.on('connect', function () {
-    //              console.log('Mqtt broker connected')
-    //             GetTask()
-    //          })
-    //      } catch (error) {
-    //          console.log(error)
-    //      }
-    //  }
+    else {
+        registryLocation = config.registryLocation
+    }
 
-    
-    
+    if (!Assigned) {
+        client = mqtt.connect(`mqtt://${config.mqttLocation}`)
+        try {
+            client.on('connect', function () {
+                console.log('Mqtt broker connected')
+                client.subscribe(`Resource-Pool`, null, function () {
+                    console.log('Connected to resource pool')
+                    console.log('now in assinged is false..')
+                    AssignedStatus()
+                    GetTask(config.registryLocation)
+                })
+            })
+        } catch (error) {
+            console.log(error)
+        }
+    } else {
+        //Here we can place the update node function once that is done we can subscribe again with below function and set assgined to false. 
+
+        // client.subscribe(`Resource-Pool`, null, function () {
+        //     console.log('just before the client on message function')
+        // })
+    }
+
+
+
     // all this code will need to be chagned, the questions have been altered to suit already.
-    
+
 }
 // client.publish('presence', 'Hello mqtt') //publish messages, topic/message
 

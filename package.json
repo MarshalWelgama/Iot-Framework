@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "chalk-pipe": "^5.1.1",
+    "dockerstats": "^2.3.0",
     "fs": "0.0.1-security",
     "inquirer": "^8.1.2",
     "mqtt": "^4.2.8"

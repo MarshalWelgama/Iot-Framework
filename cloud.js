@@ -1,2 +1,7 @@
-const config = require('./config.json')
-console.log(config.nodeType)
+function run(config) {
+    console.log('we are in cloud')
+}
+
+module.exports = {
+    run
+};

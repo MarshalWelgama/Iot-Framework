@@ -1,31 +1,33 @@
 const { exec } = require('child_process');
 var finished = false
-var exec_commands = (commands) => {
+var exec_commands = (commands, callback = function () { return null }) => {
   var command = commands.shift()
   exec(command, (error, stdout, stderr) => {
-    
+
     if (error) {
-        console.log(`error: ${error.message}`);
-       // process.exit(1)
-       return;
+      console.log(`error: ${error.message}`);
+      // process.exit(1)
+      return;
     }
     // if (stderr) {
     //     console.log(`stderr: ${stderr}`);
- 
+
     // }
     // if (stdout) {
     //     console.log(`stdout: ${stdout}`); 
-    
-    // }
-    if(commands.length) exec_commands(commands)
-    if(!commands.length){
-        finished = !finished
-    } 
-    if(finished) console.log("Completed!")
-    
-  })
 
+    // }
+    if (commands.length) exec_commands(commands)
+    if (!commands.length) {
+      finished = !finished
+    }
+    if (finished) {
+      console.log("Completed!")
+      callback()
+    }
+
+  })
 }
 module.exports = {
-    exec_commands,
+  exec_commands,
 };
