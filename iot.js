@@ -66,13 +66,14 @@ function updateNode(iN, rL) {
             if (data[0].cpuPercent > 150) { //min threshold
                 // console.log(data[0].cpuPercent);
                 percentages.iN.push(data[0].cpuPercent)
-                client.publish('Resource-Pool', `${rL}/${iN}`)
             }
         })
         console.log(percentages.iN.length)
         if (percentages.iN.length > 60) { //gets average every two minutes roughly
             console.log(arrAvg(percentages.iN)) //here we can send mqtt message if > our max threshold.
+            client.publish('Resource-Pool', `${rL}/${iN}`) //put this if it is above max threshold
             percentages.iN = []
+
         }
     }, 2000); //gets recording every two seconds
 
