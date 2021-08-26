@@ -19,7 +19,7 @@ const initialize = [
         name: 'registrySetup',
         message: "Has docker registery been setup?",
         default() {
-            return false;
+            return true;
         },
 
     },
@@ -50,21 +50,21 @@ const initialize = [
             return val.toLowerCase();
         }
     },
-    {
-        type: 'confirm',
-        name: 'registryImage',
-        message: "Docker image hosted in registery?",
-        when: (answers) => answers.registrySetup === true && answers.nodeType == 'iot',
-        default() {
-            return true;
-        },
+    // {
+    //     type: 'confirm',
+    //     name: 'registryImage',
+    //     message: "Docker image hosted in registery?",
+    //     when: (answers) => answers.registrySetup === true && answers.nodeType != 'iot',
+    //     default() {
+    //         return true;
+    //     },
 
-    },
+    // },
     {
         type: 'input',
         name: 'imageLocation',
         message: "Image location:",
-        when: (answers) => answers.nodeType == 'iot' && answers.registryImage === false,
+        when: (answers) => answers.nodeType == 'iot',
     },
     {
         type: 'input',
