@@ -1,44 +1,64 @@
-//const config = require('./config.json')
-var Assigned = false;
+
 var MqttConnected = false;
 var mqtt = require('mqtt')
 var shell = require('./shellHelp.js')
+var dockerstats = require('dockerstats');
 var client;
 var configuration;
-function AssignedStatus() {
-    (Assigned) ? console.log('Working on task') : console.log('Waiting for task..')
+const arrAvg = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
+function updateNode(iN, rL) {
+    var percentages = {}
+    percentages.iN = []
+    const checker = setInterval(() => {
+        dockerstats.dockerContainerStats(`${iN}`, function (data) {
+            if (data[0].cpuPercent) { //min threshold
+                // console.log(data[0].cpuPercent);
+                percentages.iN.push(data[0].cpuPercent)
+            }
+        })
+        console.log(percentages.iN.length)
+        if (percentages.iN.length > 5 && arrAvg(percentages.iN) > 100) { //gets average every two minutes roughly
+            console.log(arrAvg(percentages.iN)) //here we can send mqtt message if > our max threshold.
+            client.publish('Resource-Pool-Cloud', `${iN}`) //put this if it is above max threshold
+            StopImage(iN)
+            percentages.iN = []
+            clearInterval(checker)
+        }
+    }, 2000); //gets recording every two seconds
+}
+
+function StopImage(iN) {
+    var commands = [
+        `docker stop ${iN}`,
+        `docker container rm ${iN}`,
+        'echo done'
+    ]
+    console.log('Stoping docker iamge please wait..')
+    shell.exec_commands(commands)
+    //stop image from running 
+    return null
 }
 
 function runRegistryImage(iN, rL) {
     var commands = [
         `docker pull ${rL}/${iN}`,
-        `docker run ${rL}/${iN}`,
+        `docker run --name ${iN} -e PYTHONUNBUFFERED=1 -d ${rL}/${iN}`,
         'echo done'
     ]
-    Assigned = true;
     shell.exec_commands(commands)
     console.log('Running task from registry, please wait...')
-
+    updateNode(iN, rL)
     // run the image based on the name of it in the registry.
 }
 
 function GetTask(rL) { //command to get task, we will alweays stay connected to resource pool
     client.on('message', function (topic, message) {
-        if (Assigned) {
-            console.log(Assigned)
-            console.log('working on task, cannot pickup new task')
-            console.log(message.toString())
-        } else {
-            console.log('Inside Gettask and assigned in false so we will run the image')
-            // on message, run docker node and stop subscribing. 
-            runRegistryImage(message.toString(), rL)
-            console.log(Assigned)
-            client.unsubscribe('Resource-Pool')
-            run(configuration)
-        }
-        //once we identify a task, run it on this node and send a message to resource pool completed for iot node to stop
+        runRegistryImage(message.toString(), rL) //might need to add into a json that we are running this image.
+        client.unsubscribe('Resource-Pool')
+        run(configuration)
     })
 }
+//once we identify a task, run it on this node and send a message to resource pool completed for iot node to stop
 
 function SetupRegistry() {
     var commands = [
@@ -72,28 +92,25 @@ function run(config) {
         registryLocation = config.registryLocation
     }
 
-    if (!Assigned) {
-        client = mqtt.connect(`mqtt://${config.mqttLocation}`)
-        try {
-            client.on('connect', function () {
-                console.log('Mqtt broker connected')
-                client.subscribe(`Resource-Pool`, null, function () {
-                    console.log('Connected to resource pool')
-                    console.log('now in assinged is false..')
-                    AssignedStatus()
-                    GetTask(config.registryLocation)
-                })
+    client = mqtt.connect(`mqtt://${config.mqttLocation}`)
+    try {
+        client.on('connect', function () {
+            console.log('Mqtt broker connected')
+            client.subscribe(`Resource-Pool`, null, function () {
+                console.log('Connected to resource pool')
+                GetTask(config.registryLocation)
             })
-        } catch (error) {
-            console.log(error)
-        }
-    } else {
-        //Here we can place the update node function once that is done we can subscribe again with below function and set assgined to false. 
-
-        // client.subscribe(`Resource-Pool`, null, function () {
-        //     console.log('just before the client on message function')
-        // })
+        })
+    } catch (error) {
+        console.log(error)
     }
+    // } else {
+    //     //Here we can place the update node function once that is done we can subscribe again with below function and set assgined to false. 
+
+    //     // client.subscribe(`Resource-Pool`, null, function () {
+    //     //     console.log('just before the client on message function')
+    //     // })
+    // }
 
 
 

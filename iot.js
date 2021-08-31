@@ -35,20 +35,20 @@ function RunImage(iN) {
 function StopImage(iN) {
     var commands = [
         `docker stop ${iN}`,
+        `docker container rm ${iN}`,
         'echo done'
     ]
     console.log('Stoping docker iamge please wait..')
     shell.exec_commands(commands)
-    //stop image from running 
     return null
 }
 
 function AddRun(iL, iN, rL) {
     var imageName = iN
     var commands = [
-        // `docker load -i ${iL}`, //load image to our docker images
-        // `docker tag ${iN} ${rL}/${iN}`, //prepare to be pushed to registry
-        // `docker push ${rL}/${iN}`, //push to registry
+        `docker load -i ${iL}`, //load image to our docker images
+        `docker tag ${iN} ${rL}/${iN}`, //prepare to be pushed to registry
+        `docker push ${rL}/${iN}`, //push to registry
         `docker run --name ${iN} -e PYTHONUNBUFFERED=1 -d ${iN}`,
         'echo done'
     ]
@@ -61,26 +61,22 @@ function AddRun(iL, iN, rL) {
 function updateNode(iN, rL) {
     var percentages = {}
     percentages.iN = []
-    setInterval(() => {
+    const checker = setInterval(() => {
         dockerstats.dockerContainerStats(`${iN}`, function (data) {
-            if (data[0].cpuPercent > 150) { //min threshold
+            if (data[0].cpuPercent) { //min threshold
                 // console.log(data[0].cpuPercent);
                 percentages.iN.push(data[0].cpuPercent)
             }
         })
         console.log(percentages.iN.length)
-        if (percentages.iN.length > 60) { //gets average every two minutes roughly
-            console.log(arrAvg(percentages.iN)) //here we can send mqtt message if > our max threshold.
-            client.publish('Resource-Pool', `${rL}/${iN}`) //put this if it is above max threshold
+        if ((percentages.iN.length > 5 && arrAvg(percentages.iN) > 100)) {
+            // console.log(arrAvg(percentages.iN)) 
+            client.publish('Resource-Pool', `${iN}`)
+            StopImage(iN)
             percentages.iN = []
-
+            clearInterval(checker)
         }
     }, 2000); //gets recording every two seconds
-
-
-    // this is where we can assess how much the docker image is using, set certain threshold and send mqtt message
-    // send mqtt message to higher up
-    // include stop image function here
     return null
 }
 
@@ -101,20 +97,6 @@ function run(config) {
     } catch (error) {
         console.log(error)
     }
-
-    //AddImage(config.imageLocation, config.registryLocation, config.imageName)
-    //AddRun(config.imageLocation, config.imageName, config.registryLocation)
-    // RunImage(config.imageName)
-    //client.subscribe(`${config.name}`)
-
-    //client.publish('Resource-Pool', 'Hello mqtt') //publish messages, topic/message
-
-    // client.on('message', function (topic, message) {
-    //     // prints out message when received from subscribe
-    //     console.log(message.toString())
-    //     console.log(topic.toString())
-    // })
-    // start doing shit
 }
 
 module.exports = {
