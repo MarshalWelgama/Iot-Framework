@@ -70,7 +70,7 @@ function updateNode(iN, rL) {
         })
         console.log(percentages.iN.length)
         if ((percentages.iN.length > 5 && arrAvg(percentages.iN) > 100)) {
-            // console.log(arrAvg(percentages.iN)) 
+            console.log(arrAvg(percentages.iN))
             client.publish('Resource-Pool', `${iN}`)
             StopImage(iN)
             percentages.iN = []

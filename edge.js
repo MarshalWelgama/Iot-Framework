@@ -1,5 +1,4 @@
 
-var MqttConnected = false;
 var mqtt = require('mqtt')
 var shell = require('./shellHelp.js')
 var dockerstats = require('dockerstats');
