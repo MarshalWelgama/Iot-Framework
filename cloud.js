@@ -29,7 +29,7 @@ function runRegistryImage(iN, rL) {
 function GetTask(rL) {
     client.on('message', function (topic, message) {
         runRegistryImage(message.toString(), rL) //might need to add into a json that we are running this image.
-        client.unsubscribe('Resource-Pool')
+        client.unsubscribe('Resource-Pool-Cloud')
         run(configuration)
     })
 }
@@ -66,7 +66,7 @@ function run(config) {
     try {
         client.on('connect', function () {
             console.log('Mqtt broker connected')
-            client.subscribe(`Resource-Pool`, null, function () {
+            client.subscribe(`Resource-Pool-Cloud`, null, function () {
                 console.log('Connected to resource pool')
                 GetTask(config.registryLocation)
             })
