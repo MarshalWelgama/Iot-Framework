@@ -11,9 +11,11 @@
   "license": "ISC",
   "dependencies": {
     "chalk-pipe": "^5.1.1",
+    "csv-writer": "^1.6.0",
     "dockerstats": "^2.3.0",
     "fs": "0.0.1-security",
     "inquirer": "^8.1.2",
+    "moment": "^2.29.1",
     "mqtt": "^4.2.8"
   }
 }

@@ -3,6 +3,18 @@ var shell = require('./shellHelp.js')
 var dockerstats = require('dockerstats');
 var client;
 var configuration;
+
+var moment = require('moment')
+const createCsvWriter = require('csv-writer').createObjectCsvWriter;
+const csvWriter = createCsvWriter({
+    path: 'out.csv',
+    header: [
+        { id: 'time', title: 'Time' },
+        { id: 'percent', title: 'Percent' },
+        { id: 'point', title: 'Point' },
+    ]
+});
+
 const arrAvg = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
 
 function StopImage(iN) {
@@ -24,6 +36,7 @@ function runRegistryImage(iN, rL) {
     ]
     console.log('Running task from registry, please wait...')
     shell.exec_commands(commands)
+    updateNode(iN, rL)
 }
 
 function GetTask(rL) {
@@ -49,6 +62,40 @@ function SetupRegistry() {
     shell.exec_commands(commands)
     console.log('Your registry is being created in the background on port 5000, please give a few minutes...')
 }
+
+function updateNode(iN, rL) {
+    var percentages = {}
+    percentages.iN = []
+    results = []
+    const checker = setInterval(() => {
+        dockerstats.dockerContainerStats(`${iN}`, function (data) {
+            //min threshold
+            // console.log(data[0].cpuPercent);
+            percentages.iN.push(data[0].cpuPercent)
+            results.push({
+                time: `${moment().format()}`,
+                percent: `${data[0].cpuPercent}`,
+                point: `${percentages.iN.length}`
+            })
+            console.log(results)
+        })
+        console.log(percentages.iN.length)
+        if (percentages.iN.length > 59) { //gets average every two minutes roughly
+            if (arrAvg(percentages.iN) > 100) {
+                console.log(arrAvg(percentages.iN)) //here we can send mqtt message if > our max threshold.
+                StopImage(iN)
+                csvWriter
+                    .writeRecords(results)
+                    .then(() => percentages.iN = []);
+                clearInterval(checker)
+            }
+            else {
+                percentages.iN = []
+            }
+        }
+    }, 2000); //gets recording every two seconds
+}
+
 
 function run(config) {
     configuration = config;

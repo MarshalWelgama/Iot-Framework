@@ -1,10 +1,19 @@
 const { builtinModules } = require('module')
 var dockerstats = require('dockerstats');
 var shell = require('./shellHelp.js')
+var moment = require('moment')
 //const config = require('./config.json')
 var mqtt = require('mqtt')
 var client
-
+const createCsvWriter = require('csv-writer').createObjectCsvWriter;
+const csvWriter = createCsvWriter({
+    path: 'out.csv',
+    header: [
+        { id: 'time', title: 'Time' },
+        { id: 'percent', title: 'Percent' },
+        { id: 'point', title: 'Point' },
+    ]
+});
 
 const arrAvg = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
 
@@ -61,20 +70,35 @@ function AddRun(iL, iN, rL) {
 function updateNode(iN, rL) {
     var percentages = {}
     percentages.iN = []
+    results = []
     const checker = setInterval(() => {
         dockerstats.dockerContainerStats(`${iN}`, function (data) {
-            if (data[0].cpuPercent) { //min threshold
-                // console.log(data[0].cpuPercent);
-                percentages.iN.push(data[0].cpuPercent)
-            }
+            //min threshold
+            // console.log(data[0].cpuPercent);
+            percentages.iN.push(data[0].cpuPercent)
+
+
+            results.push({
+                time: `${moment().format()}`,
+                percent: `${data[0].cpuPercent}`,
+                point: `${percentages.iN.length}`
+            })
+            console.log(results)
         })
-        console.log(percentages.iN.length)
-        if ((percentages.iN.length > 5 && arrAvg(percentages.iN) > 100)) {
-            console.log(arrAvg(percentages.iN))
-            client.publish('Resource-Pool', `${iN}`)
-            StopImage(iN)
-            percentages.iN = []
-            clearInterval(checker)
+
+        if (percentages.iN.length > 59) { //gets average every two minutes roughly
+            if (arrAvg(percentages.iN) > 100) {
+                console.log(arrAvg(percentages.iN)) //here we can send mqtt message if > our max threshold.
+                client.publish('Resource-Pool-Cloud', `${iN}`) //put this if it is above max threshold
+                StopImage(iN)
+                csvWriter
+                    .writeRecords(results)
+                    .then(() => percentages.iN = []);
+                clearInterval(checker)
+            }
+            else {
+                percentages.iN = []
+            }
         }
     }, 2000); //gets recording every two seconds
     return null
