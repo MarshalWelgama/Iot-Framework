@@ -34,7 +34,7 @@ function updateNode(iN, rL) {
             console.log(results)
         })
         console.log(percentages.iN.length)
-        if (percentages.iN.length > 59) { //gets average every two minutes roughly
+        if (percentages.iN.length > 29) { //gets average every two minutes roughly
             if (arrAvg(percentages.iN) > 100) {
                 console.log(arrAvg(percentages.iN)) //here we can send mqtt message if > our max threshold.
                 client.publish('Resource-Pool-Cloud', `${iN}`) //put this if it is above max threshold
