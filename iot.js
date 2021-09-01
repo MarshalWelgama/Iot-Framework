@@ -86,7 +86,7 @@ function updateNode(iN, rL) {
         if (percentages.iN.length > 19) { //gets average every two minutes roughly
             if (arrAvg(percentages.iN) > 100) {
                 console.log(arrAvg(percentages.iN)) //here we can send mqtt message if > our max threshold.
-                client.publish('Resource-Pool-Cloud', `${iN}`) //put this if it is above max threshold
+                client.publish('Resource-Pool', `${iN}`) //put this if it is above max threshold
                 StopImage(iN)
                 csvWriter
                     .writeRecords(results)
