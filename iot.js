@@ -55,9 +55,6 @@ function StopImage(iN) {
 function AddRun(iL, iN, rL) {
     var imageName = iN
     var commands = [
-        `docker load -i ${iL}`, //load image to our docker images
-        `docker tag ${iN} ${rL}/${iN}`, //prepare to be pushed to registry
-        `docker push ${rL}/${iN}`, //push to registry
         `docker run --name ${iN} -e PYTHONUNBUFFERED=1 -d ${iN}`,
         'echo done'
     ]
