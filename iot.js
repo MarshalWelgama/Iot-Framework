@@ -86,7 +86,7 @@ function updateNode(iN, rL) {
         })
 
         if (percentages.iN.length > 29) { //gets average every two minutes roughly
-            if (arrAvg(percentages.iN) > 150 || percentages.results.iN.length > 89) {
+            if (arrAvg(percentages.iN) > 155) {
                 const csv = new ObjectsToCsv(percentages.results.iN)
                 csv.toDisk(`./${iN}.csv`)
                 console.log(arrAvg(percentages.iN)) //here we can send mqtt message if > our max threshold.
@@ -95,6 +95,13 @@ function updateNode(iN, rL) {
                 clearInterval(checker)
             }
             else {
+                if (percentages.results.iN.length > 89) {
+                    const csv = new ObjectsToCsv(percentages.results.iN)
+                    csv.toDisk(`./${iN}.csv`)
+                    console.log(arrAvg(percentages.iN))
+                    StopImage(iN)
+                    clearInterval(checker)
+                }
                 percentages.iN = []
             }
         }
