@@ -1,6 +1,7 @@
 var mqtt = require('mqtt')
 var shell = require('./shellHelp.js')
 var dockerstats = require('dockerstats');
+const ObjectsToCsv = require('objects-to-csv')
 var client;
 var configuration;
 
@@ -80,13 +81,12 @@ function updateNode(iN, rL) {
             console.log(results)
         })
         console.log(percentages.iN.length)
-        if (percentages.iN.length > 59) { //gets average every two minutes roughly
-            if (arrAvg(percentages.iN) > 100) {
+        if (percentages.iN.length > 29) { //gets average every two minutes roughly
+            if (results.length > 29) {
+                const csv = new ObjectsToCsv(results)
+                csv.toDisk(`./${iN}.csv`)
                 console.log(arrAvg(percentages.iN)) //here we can send mqtt message if > our max threshold.
                 StopImage(iN)
-                csvWriter
-                    .writeRecords(results)
-                    .then(() => percentages.iN = []);
                 clearInterval(checker)
             }
             else {

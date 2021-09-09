@@ -2,18 +2,19 @@
 var mqtt = require('mqtt')
 var shell = require('./shellHelp.js')
 var dockerstats = require('dockerstats');
+const ObjectsToCsv = require('objects-to-csv')
 var client;
 var configuration;
 var moment = require('moment')
-const createCsvWriter = require('csv-writer').createObjectCsvWriter;
-const csvWriter = createCsvWriter({
-    path: 'out.csv',
-    header: [
-        { id: 'time', title: 'Time' },
-        { id: 'percent', title: 'Percent' },
-        { id: 'point', title: 'Point' },
-    ]
-});
+// const createCsvWriter = require('csv-writer').createObjectCsvWriter;
+// var csvWriter = createCsvWriter({
+//     path: 'out.csv',
+//     header: [
+//         { id: 'time', title: 'Time' },
+//         { id: 'percent', title: 'Percent' },
+//         { id: 'point', title: 'Point' },
+//     ]
+// });
 
 
 const arrAvg = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
@@ -34,14 +35,16 @@ function updateNode(iN, rL) {
             console.log(results)
         })
         console.log(percentages.iN.length)
-        if (percentages.iN.length > 59) { //gets average every two minutes roughly
-            if (arrAvg(percentages.iN) > 100) {
+        if (percentages.iN.length > 29) { //gets average every two minutes roughly
+            if (arrAvg(percentages.iN) > 250 || results.length > 59) {
+                const csv = new ObjectsToCsv(results)
+                csv.toDisk(`./${iN}.csv`)
                 console.log(arrAvg(percentages.iN)) //here we can send mqtt message if > our max threshold.
                 client.publish('Resource-Pool-Cloud', `${iN}`) //put this if it is above max threshold
                 StopImage(iN)
-                csvWriter
-                    .writeRecords(results)
-                    .then(() => percentages.iN = []);
+                // csvWriter
+                //     .writeRecords(results)
+                //     .then(() => percentages.iN = []);
                 clearInterval(checker)
             }
             else {
@@ -104,6 +107,7 @@ function SetupRegistry() {
 }
 
 function run(config) {
+
     configuration = config;
     var registryLocation;
 
@@ -128,23 +132,7 @@ function run(config) {
     } catch (error) {
         console.log(error)
     }
-    // } else {
-    //     //Here we can place the update node function once that is done we can subscribe again with below function and set assgined to false. 
-
-    //     // client.subscribe(`Resource-Pool`, null, function () {
-    //     //     console.log('just before the client on message function')
-    //     // })
-    // }
-
-
-
-    // all this code will need to be chagned, the questions have been altered to suit already.
-
 }
-// client.publish('presence', 'Hello mqtt') //publish messages, topic/message
-
-//edge server will always be on standby, it will subscribve to resxource pool, when there is a mesage sent with the name it will be the first one to then access that file and grab it, maybe send another message to the pool saying done
-//after that its assigned status will be true and it will stop subscribing to the pool until after it has completed its tasks or moved it to the cloud.
 
 module.exports = {
     run
