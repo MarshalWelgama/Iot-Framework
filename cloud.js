@@ -67,23 +67,24 @@ function SetupRegistry() {
 function updateNode(iN, rL) {
     var percentages = {}
     percentages.iN = []
-    results = []
+    percentages.results = {}
+    percentages.results.iN = []
     const checker = setInterval(() => {
         dockerstats.dockerContainerStats(`${iN}`, function (data) {
             //min threshold
             // console.log(data[0].cpuPercent);
             percentages.iN.push(data[0].cpuPercent)
-            results.push({
+            percentages.results.iN.push({
                 time: `${moment().format()}`,
                 percent: `${data[0].cpuPercent}`,
                 point: `${percentages.iN.length}`
             })
-            console.log(results)
+            console.log(percentages.results.iN)
         })
         console.log(percentages.iN.length)
         if (percentages.iN.length > 29) { //gets average every two minutes roughly
-            if (results.length > 29) {
-                const csv = new ObjectsToCsv(results)
+            if (percentages.results.iN.length > 29) {
+                const csv = new ObjectsToCsv(percentages.results.iN)
                 csv.toDisk(`./${iN}.csv`)
                 console.log(arrAvg(percentages.iN)) //here we can send mqtt message if > our max threshold.
                 StopImage(iN)
