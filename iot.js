@@ -1,4 +1,5 @@
 const { builtinModules } = require('module')
+const ObjectsToCsv = require('objects-to-csv')
 var dockerstats = require('dockerstats');
 var shell = require('./shellHelp.js')
 var moment = require('moment')
@@ -67,7 +68,8 @@ function AddRun(iL, iN, rL) {
 function updateNode(iN, rL) {
     var percentages = {}
     percentages.iN = []
-    results = []
+    percentages.results = {}
+    percentages.results.iN = []
     const checker = setInterval(() => {
         dockerstats.dockerContainerStats(`${iN}`, function (data) {
             //min threshold
@@ -75,22 +77,21 @@ function updateNode(iN, rL) {
             percentages.iN.push(data[0].cpuPercent)
 
 
-            results.push({
+            percentages.results.iN.push({
                 time: `${moment().format()}`,
                 percent: `${data[0].cpuPercent}`,
                 point: `${percentages.iN.length}`
             })
-            console.log(results)
+            console.log(percentages.results.iN)
         })
 
-        if (percentages.iN.length > 29 || results.length > 89) { //gets average every two minutes roughly
-            if (arrAvg(percentages.iN) > 100) {
+        if (percentages.iN.length > 29) { //gets average every two minutes roughly
+            if (arrAvg(percentages.iN) > 150 || percentages.results.iN.length > 89) {
+                const csv = new ObjectsToCsv(percentages.results.iN)
+                csv.toDisk(`./${iN}.csv`)
                 console.log(arrAvg(percentages.iN)) //here we can send mqtt message if > our max threshold.
                 client.publish('Resource-Pool', `${iN}`) //put this if it is above max threshold
                 StopImage(iN)
-                csvWriter
-                    .writeRecords(results)
-                    .then(() => percentages.iN = []);
                 clearInterval(checker)
             }
             else {
