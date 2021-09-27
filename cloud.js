@@ -32,7 +32,7 @@ function StopImage(iN) {
 function runRegistryImage(iN, rL) {
     var commands = [
         `docker pull ${rL}/${iN}`,
-        `docker run --name ${iN} -it ${rL}/${iN}`,
+        `docker run --name ${iN} -e PYTHONUNBUFFERED=1 -d ${rL}/${iN}`,
         'echo done'
     ]
     console.log('Running task from registry, please wait...')
