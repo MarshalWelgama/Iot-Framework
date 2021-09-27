@@ -36,8 +36,8 @@ function updateNode(iN, rL) {
             console.log(percentages.results.iN)
         })
         console.log(percentages.iN.length)
-        if (percentages.iN.length > 29) { //gets average every two minutes roughly
-            if (arrAvg(percentages.iN) > 200) {
+        if (percentages.iN.length > 14) { //gets average every two minutes roughly
+            if (arrAvg(percentages.iN) > 125) {
                 const csv = new ObjectsToCsv(percentages.results.iN)
                 csv.toDisk(`./${iN}.csv`)
                 console.log(arrAvg(percentages.iN)) //here we can send mqtt message if > our max threshold.
@@ -77,7 +77,7 @@ function StopImage(iN) {
 function runRegistryImage(iN, rL) {
     var commands = [
         `docker pull ${rL}/${iN}`,
-        `docker run --name ${iN} -e PYTHONUNBUFFERED=1 -d ${rL}/${iN}`,
+        `docker run --name ${iN} -it ${rL}/${iN}`,
         'echo done'
     ]
     shell.exec_commands(commands)
